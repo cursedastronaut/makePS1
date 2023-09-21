@@ -8,6 +8,15 @@ $folder_runtime = '.\runtime'
 $exe_name = 'test.exe' #FORMAT: test.exe
 $compiler = 'g++'
 
+if ($args -contains "-help") {
+	Write-Output "Help - make.ps1 (by Galaad Martineaux)"
+	Write-Output "	.\make.ps1			| Will compile according to the script"
+	Write-Output "	.\make.ps1 -Debug	| Displays compiling commands "
+	Write-Output "	.\make.ps1 -run		| Runs the file after compiling."
+	Write-Output ""
+	Exit
+}
+
 #Please refrain from editing further from this
 $currentDirectory = (Get-Location).Path
 
