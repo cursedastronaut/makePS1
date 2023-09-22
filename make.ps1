@@ -7,13 +7,14 @@ $folder_source = '.\src'
 $folder_runtime = '.\runtime'
 $exe_name = 'test.exe' #FORMAT: test.exe
 $compiler = 'g++.exe'
-$compilation_arguments = '-L.\libs -L./libs/libglfw3.a -lglfw3 -lgdi32 -lstdc++ -lopengl32 '
+$compilation_arguments = ''
 
 if ($args -contains "-help") {
 	Write-Output "Help - make.ps1 (by Galaad Martineaux)"
 	Write-Output "	.\make.ps1			| Will compile according to the script"
 	Write-Output "	.\make.ps1 -Debug	| Displays compiling commands "
 	Write-Output "	.\make.ps1 -run		| Runs the file after compiling."
+	Write-Output "	.\make.ps1 -obj		| Compiles only up to the object step."
 	Write-Output ""
 	Exit
 }
@@ -47,7 +48,9 @@ foreach ($file in $cppFiles) {
 	$command = "$compiler " + $file + " -I$folder_include $compilation_arguments -c -o " + $outputName
 	Write-Output "Compiling $file..."
 	
-	Write-Debug "Command: $command"
+	if ($args -contains "-Debug") {
+		Write-Host "Command: $command" -ForegroundColor Blue
+	}
 	
 	Invoke-Expression $command
 	if ($LASTEXITCODE -ne 0) { Exit }
@@ -66,10 +69,18 @@ foreach ($file in $cppFiles) {
 	$command = "$compiler " + $file + " -I$folder_include $compilation_arguments -c -o " + $outputName
 	Write-Output "Compiling $file..."
 	
-	Write-Debug "Command: $command"
+	if ($args -contains "-Debug") {
+		Write-Host "Command: $command" -ForegroundColor Blue
+	}
 	
 	Invoke-Expression $command
 	if ($LASTEXITCODE -ne 0) { Exit }
+}
+
+if ($args -contains "-obj") {
+	Write-Output "Done."
+	if ($args -contains "-run") {Write-Warning "-run ignored as -obj was specified." }
+	Exit
 }
 
 #STEP 6: FIND EVERY .OBJ FILE IN OBJECTS FOLDER
@@ -80,17 +91,22 @@ $objFiles = $objFiles | ForEach-Object {
 }
 
 #STEP 7: COMPILE THEM ALL INTO AN EXECUTABLE
-$command = "$compiler  -o $folder_runtime\$exe_name $compilation_arguments"
+$command = "$compiler  -o $folder_runtime\$exe_name $compilation_arguments -L$folder_libs"
 foreach ($file in $objFiles) {
 	$command += " $file"
 }
 
-Write-Debug "Command: $command"
+if ($args -contains "-Debug") {
+	Write-Host "Command: $command" -ForegroundColor Blue
+}
 
-Write-Output "Compiling $folder_runtime\$exe_name"
+Write-Output "Compiling $folder_runtime\$exe_name..."
 Invoke-Expression $command
 
 if ($LASTEXITCODE -ne 0) { Exit }
+Write-Output "Done."
 if ($args -contains "-run") {
+	Write-Output "________________"
+	Write-Output ""
 	Invoke-Expression "$folder_runtime\$exe_name"
 }
