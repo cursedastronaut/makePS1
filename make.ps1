@@ -1,10 +1,10 @@
 #Handmade by Galaad Martineaux
-#FORMAT: $folder = '.\path\to\folder'
-$folder_include = '.\include'
-$folder_libs = '.\libs'
-$folder_objects = '.\objects'
-$folder_source = '.\src'
-$folder_runtime = '.\runtime'
+#FORMAT: $folder = 'path\to\folder'
+$folder_include = 'include', 'headers'
+$folder_libs = 'libs'
+$folder_objects = 'objects'
+$folder_source = 'src'
+$folder_runtime = '.'
 $exe_name = 'test.exe' #FORMAT: test.exe
 $compiler = 'g++.exe'
 $compilation_arguments = ''
@@ -24,28 +24,33 @@ $currentDirectory = (Get-Location).Path
 
 
 #STEP 1: FIND EVERY .CPP FILE IN INCLUDE FOLDERS AND SUBFOLDERS
+
 $cppFiles = Get-ChildItem -Path $folder_include -Filter "*.cpp" -File -Recurse | Resolve-Path -Relative
 $cppFiles = $cppFiles | ForEach-Object {
 	$newFullName = $_.Replace($currentDirectory, ".")
 	New-Object System.IO.FileInfo -ArgumentList $newFullName
 }
+
 #STEP 2: FIND EVERY SUBFOLDER IN INCLUDE FOLDER, TO INCLUDE THEM
-$subIncludeFolders = Get-ChildItem -Path $folder_include -Directory -Recurse
+$subIncludeFolders = foreach ($tempdir in $folder_include) {
+    Get-ChildItem -Path $tempdir -Directory -Recurse
+}
 $subIncludeFolders = $subIncludeFolders | ForEach-Object {
     $newFullName = $_.FullName.Replace($currentDirectory, ".")
     New-Object System.IO.FileInfo -ArgumentList $newFullName
 }
 
 foreach ($sub in $subIncludeFolders) {
-	$folder_include += " -I$sub";
+	$folder_include_new += " -I$sub";
 }
-
-
+foreach ($tempdir in $folder_include) {
+	$folder_include_new += " -I$tempdir";
+}
 
 #STEP 3: COMPILE EVERY .CPP FILE IN AN .OBJ OBJECT FILE INTO THE OBJECT FOLDER
 foreach ($file in $cppFiles) {
 	$outputName = "$folder_objects\" + $file.BaseName + ".obj"
-	$command = "$compiler " + $file + " -I$folder_include $compilation_arguments -c -o " + $outputName
+	$command = "$compiler " + $file + " $folder_include_new $compilation_arguments -c -o " + $outputName
 	Write-Output "Compiling $file..."
 	
 	if ($args -contains "-Debug") {
@@ -66,7 +71,7 @@ $cppFiles = $cppFiles | ForEach-Object {
 #STEP 5: COMPILE EVERY .CPP FILE IN AN .OBJ OBJECT FILE INTO THE OBJECT FOLDER
 foreach ($file in $cppFiles) {
 	$outputName = "$folder_objects\" + $file.BaseName + ".obj"
-	$command = "$compiler " + $file + " -I$folder_include $compilation_arguments -c -o " + $outputName
+	$command = "$compiler " + $file + " $folder_include_new $compilation_arguments -c -o " + $outputName
 	Write-Output "Compiling $file..."
 	
 	if ($args -contains "-Debug") {
@@ -91,10 +96,12 @@ $objFiles = $objFiles | ForEach-Object {
 }
 
 #STEP 7: COMPILE THEM ALL INTO AN EXECUTABLE
-$command = "$compiler  -o $folder_runtime\$exe_name $compilation_arguments -L$folder_libs"
+#g++ [includes] [libs] [objects] [arguments] [name]
+$command = "$compiler $folder_include_new -L$folder_libs"
 foreach ($file in $objFiles) {
 	$command += " $file"
 }
+$command += " $compilation_arguments  -o $folder_runtime\$exe_name"
 
 if ($args -contains "-Debug") {
 	Write-Host "Command: $command" -ForegroundColor Blue
