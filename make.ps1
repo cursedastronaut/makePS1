@@ -1,5 +1,6 @@
 #Handmade by Galaad Martineaux
 #FORMAT: $folder = 'path\to\folder'
+$source_file_ext = "cpp"
 $folder_include = 'include', 'headers'
 $folder_libs = 'libs'
 $folder_objects = 'objects'
@@ -25,7 +26,7 @@ $currentDirectory = (Get-Location).Path
 
 #STEP 1: FIND EVERY .CPP FILE IN INCLUDE FOLDERS AND SUBFOLDERS
 
-$cppFiles = Get-ChildItem -Path $folder_include -Filter "*.cpp" -File -Recurse | Resolve-Path -Relative
+$cppFiles = Get-ChildItem -Path $folder_include -Filter "*.$source_file_ext" -File -Recurse | Resolve-Path -Relative
 $cppFiles = $cppFiles | ForEach-Object {
 	$newFullName = $_.Replace($currentDirectory, ".")
 	New-Object System.IO.FileInfo -ArgumentList $newFullName
@@ -63,7 +64,7 @@ foreach ($file in $cppFiles) {
 
 #STEP 4: FIND EVERY .CPP FILE IN SOURCE FOLDERS AND SUBFOLDERS
 $cppFiles = foreach ($tempdir in $folder_source) {
-	Get-ChildItem -Path $tempdir -Filter "*.cpp" -File -Recurse | Resolve-Path -Relative
+	Get-ChildItem -Path $tempdir -Filter "*.$source_file_ext" -File -Recurse | Resolve-Path -Relative
 }
 $cppFiles = $cppFiles | ForEach-Object {
 	$newFullName = $_.Replace($currentDirectory, ".")
