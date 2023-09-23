@@ -3,7 +3,7 @@
 $folder_include = 'include', 'headers'
 $folder_libs = 'libs'
 $folder_objects = 'objects'
-$folder_source = 'src'
+$folder_source = 'src', 'src2'
 $folder_runtime = '.'
 $exe_name = 'test.exe' #FORMAT: test.exe
 $compiler = 'g++.exe'
@@ -62,7 +62,9 @@ foreach ($file in $cppFiles) {
 }
 
 #STEP 4: FIND EVERY .CPP FILE IN SOURCE FOLDERS AND SUBFOLDERS
-$cppFiles = Get-ChildItem -Path $folder_source -Filter "*.cpp" -File -Recurse | Resolve-Path -Relative
+$cppFiles = foreach ($tempdir in $folder_source) {
+	Get-ChildItem -Path $tempdir -Filter "*.cpp" -File -Recurse | Resolve-Path -Relative
+}
 $cppFiles = $cppFiles | ForEach-Object {
 	$newFullName = $_.Replace($currentDirectory, ".")
 	New-Object System.IO.FileInfo -ArgumentList $newFullName
